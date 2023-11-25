@@ -1,54 +1,53 @@
-# Install library yang diperlukan
-!pip install feedparser
+import requests
+from bs4 import BeautifulSoup
+import re
 
-import feedparser
-from datetime import datetime
+def google_search(query, year=None):
+    search_url = f"https://www.google.com/search?q={query}"
+    
+    if year:
+        # Menambahkan filter tahun ke dalam query
+        search_url += f"&tbs=cdr:1,cd_min:{year},cd_max:{year}"
 
-def crawl_berita(lokasi, kata_kunci, tahun, jumlah_berita):
-    tanggal_awal = f'{tahun}-01-01T00:00:00Z'
-    tanggal_akhir = f'{tahun+1}-01-01T00:00:00Z'
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
 
+    response = requests.get(search_url, headers=headers)
+    if response.status_code == 200:
+        return response.text
+    else:
+        print(f"Failed to retrieve search results. Status code: {response.status_code}")
+        return None
 
-    url = f'https://news.google.com/rss/search?q={kata_kunci}+location:{lokasi}&hl=id&gl=ID&ceid=ID:en&time={tanggal_awal}_{tanggal_akhir}'
+def extract_links_and_titles(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    search_results = soup.find_all('div', class_='tF2Cxc')
 
+    results_array = []
+    for result in search_results:
+        link = result.find('a')['href']
+        title = result.find('h3').get_text()
+        results_array.append({'title': title, 'link': link})
 
-    feed = feedparser.parse(url)
+    return results_array
 
-    berita_dict = {'judul': [], 'link': [], 'deskripsi': []}
+def main():
+    search_query = input("Masukkan query pencarian: ")
+    search_year = input("Masukkan tahun filter (opsional): ")
 
-    for entry in feed.entries[:jumlah_berita]:
-        judul = entry.title
-        link = entry.link
-        deskripsi = entry.summary
-        berita_dict['judul'].append(judul)
-        berita_dict['link'].append(link)
-        berita_dict['deskripsi'].append(deskripsi)
+    if search_year and not re.match(r'^\d{4}$', search_year):
+        print("Format tahun tidak valid. Gunakan format YYYY (contoh: 2022)")
+        return
 
+    search_html = google_search(search_query, search_year)
 
-    simpulan = analyze_berita(berita_dict['judul'], kata_kunci)
+    if search_html:
+        search_results = extract_links_and_titles(search_html)
 
-    return berita_dict, simpulan
+        print("\nHasil Pencarian:")
+        for i, result in enumerate(search_results, 1):
+            print(f"{i}. {result['title']} - {result['link']}")
 
-def analyze_berita(judul_berita, kata_kunci):
-
-    total_berita = len(judul_berita)
-    berita_kunci = [judul for judul in judul_berita if kata_kunci.lower() in judul.lower()]
-    total_berita_kunci = len(berita_kunci)
-
-    return f'Dari total {total_berita} berita, {total_berita_kunci} berita mengandung kata kunci.'
-
-
-
-
-# Contoh pemanggilan fungsi dengan lokasi 'Jakarta', kata kunci 'kekeringan', tahun '2020', dan jumlah berita '10'
-tahun_berita = 2020
-berita_dict, simpulan = crawl_berita('Jakarta', 'kekeringan', tahun_berita, 10)
-
-# Menampilkan list berita dan link
-print(f'Jumlah Berita: {len(berita_dict["judul"])}')
-print(f'Simpulan: {simpulan}')
-for i, judul in enumerate(berita_dict['judul']):
-    print(f'{i + 1}. {judul}')
-    print(f'   Link: {berita_dict["link"][i]}')
-    print(f'   Deskripsi: {berita_dict["deskripsi"][i]}')
-    print()
+if __name__ == "__main__":
+    main()
