@@ -1,62 +1,76 @@
 import requests
 from bs4 import BeautifulSoup
-import re
 
-def crawl_and_analyze(url):
-    # Mendapatkan HTML dari halaman berita
+def hitung_kemunculan_kata(url, kata_kunci_array):
+    # Mendapatkan konten halaman web
     response = requests.get(url)
-    if response.status_code == 200:
-        html = response.text
-    else:
-        print(f"Gagal mendapatkan halaman {url}. Status code: {response.status_code}")
-        return None
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-    # Menggunakan BeautifulSoup untuk parsing HTML
-    soup = BeautifulSoup(html, 'html.parser')
+    # Mendapatkan teks dari halaman web
+    teks = soup.get_text()
 
-    # Mencari semua paragraf di dalam konten berita
-    paragraphs = soup.find_all('p')
+    # Inisialisasi dictionary untuk menyimpan jumlah kemunculan kata kunci
+    find_kabupaten = {}
 
-    # Mencari nama desa dari teks paragraf
-    desa_mentions = set()
-    for paragraph in paragraphs:
-        text = paragraph.get_text().lower()
+    # Iterasi melalui setiap kata kunci
+    for kata_kunci in kata_kunci_array:
+        # Menghitung kemunculan kata kunci
+        kemunculan = teks.lower().count(kata_kunci.lower())
+        
+        # Jika ditemukan, menyimpan jumlah kemunculan
+        if kemunculan > 0:
+            key = f'keyword {kata_kunci}'
+            if key in find_kabupaten:
+                find_kabupaten[key] += kemunculan
+            else:
+                find_kabupaten[key] = kemunculan
 
-        # Mencari kata 'desa' di awal teks paragraf
-        desa_match = re.search(r'\bdesa (\w+)', text)
-        if desa_match:
-            desa_name = desa_match.group(1)
-            desa_mentions.add(desa_name)
+    return find_kabupaten
 
-    # Mencari nama desa dari alt teks gambar
-    images = soup.find_all('img')
-    for image in images:
-        alt_text = image.get('alt', '').lower()
-        desa_match = re.search(r'\bdesa (\w+)', alt_text)
-        if desa_match:
-            desa_name = desa_match.group(1)
-            desa_mentions.add(desa_name)
+# List link berita
+links = [
+    "https://regional.kompas.com/read/2022/10/11/083314478/3-wilayah-di-ntt-masih-alami-kekeringan-ekstrem-terpanjang-205-hari-tanpa-hujan",
+    "https://voaindonesia.com/a/ntb-dan-ntt-hadapi-bencana-kekeringan/6212316.html",
+    "https://bpbd.nttprov.go.id/berita/detail/240/NTT-Masuk-Puncak-Musim-Kemarau",
+    "https://www.antaranews.com/berita/971750/kekeringan-bukan-lagi-bencana-bagi-ntt",
+    "https://ntt.bps.go.id/indicator/27/913/1/korban-kekeringan-jiwa-2020-2022",
+    "https://www.mongabay.co.id/2021/07/25/ancaman-kekeringan-melanda-ntt-apa-yang-harus-dilakukan/",
+    "https://www.liputan6.com/news/read/4647287/bmkg-kekeringan-ekstrem-dan-hari-tanpa-hujan-hanya-terjadi-di-ntt",
+    "https://news.republika.co.id/berita/rh3lxo382/enam-wilayah-ntt-terancam-bencana-kekeringan",
+    "https://blog.insanbumimandiri.org/ntt-provinsi-nomor-1-kekeringan-terparah-se-indonesia/",
+    "https://news.detik.com/berita/3047262/ntt-7-kabupaten-berstatus-awas-bencana-kekeringan",
+    "https://www.merdeka.com/peristiwa/11-daerah-di-ntt-alami-kekeringan-ekstrem-panjang.html",
+    "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8055416/",
+    "https://jsi.universitaspertamina.ac.id/jsi/article/view/4",
+    "https://airkami.id/provinsi-ntb-dan-ntt-hadapi-bencana-kekeringan/",
+    "https://data.pu.go.id/infografis/waspada-potensi-kekeringan-di-ntt-bulan-november-2020",
+    "https://www.cnnindonesia.com/teknologi/20190625181723199-406356/jakarta-hingga-ntt-berpotensi-kekeringan-jelang-musim-kemarau",
+    "https://mediaindonesia.com/nusantara/439731/lima-kabupaten-di-ntt-berstatus-awas-kekeringan",
+    "https://rakyatntt.com/ntt-hadapi-bencana-kekeringan-ini-solusi-yang-ditawarkan-dprd-ntt/",
+    "https://www.cnbcindonesia.com/news/202007262005164175509/waspada-4-wilayah-di-ri-terancam-kekeringan-ekstrem",
+    "https://ntt.pikiran-rakyat.com/regional/pr-2324411948/ancaman-kekeringan-di-ntt-bpbd-imbau-petani-hemat-air-dengan-cara-ini",
+    "https://www.jawapos.com/berita-sekitar-anda/01281858/sembilan-kabupaten-di-ntt-berstatus-waspada-kekeringan-meteorologis",
+]
 
-    return desa_mentions
+# Array kata kunci
+kata_kunci_array = ['Lombok Barat', 'Lombok Tengah', 'Lombok Timur', 'Sumbawa', 'Dompu', 'Bima',
+                    'Sumbawa Barat', 'Lombok Utara', 'Mataram', 'Kota Bima']
 
-def main():
-    # List hasil pencarian dan linknya
-    search_results = [
-        {'title': 'NTB dan NTT Hadapi Bencana Kekeringan', 'link': 'https://www.voaindonesia.com/a/ntb-dan-ntt-hadapi-bencana-kekeringan/6212316.html'},
-        {'title': 'Korban Kekeringan (Jiwa), 2020-2022 - BPS Provinsi NTT', 'link': 'https://ntt.bps.go.id/indicator/27/913/1/korban-kekeringan.html'},
-        {'title': 'Berita Harian Kekeringan Di Ntt Terbaru Hari Ini', 'link': 'https://www.kompas.com/tag/kekeringan+di+ntt'},
-        {'title': 'Ancaman Kekeringan Melanda NTT. Apa yang Harus Dilakukan?', 'link': 'https://www.mongabay.co.id/2021/07/25/ancaman-kekeringan-melanda-ntt-apa-yang-harus-dilakukan/'}
-        # Tambahkan hasil pencarian lainnya sesuai kebutuhan
-    ]
+# Inisialisasi dictionary untuk menyimpan hasil kumulatif
+hasil_kumulatif = {}
 
-    for result in search_results:
-        print(f"\nAnalisis Desa pada Berita: {result['title']}")
-        desa_mentions = crawl_and_analyze(result['link'])
+# Iterasi melalui setiap link berita
+for link in links:
+    hasil_kemunculan = hitung_kemunculan_kata(link, kata_kunci_array)
+    
+    # Menambahkan hasil pencarian dari link berita ke hasil kumulatif
+    for kata_kunci, kemunculan in hasil_kemunculan.items():
+        if kata_kunci in hasil_kumulatif:
+            hasil_kumulatif[kata_kunci] += kemunculan
+        else:
+            hasil_kumulatif[kata_kunci] = kemunculan
 
-        if desa_mentions:
-            print("Desa yang disebut:")
-            for desa in desa_mentions:
-                print(f"- {desa}")
-
-if __name__ == "__main__":
-    main()
+# Menampilkan hasil kumulatif
+print('Hasil Kumulatif Kemunculan Kata Kunci:')
+for kata_kunci, kemunculan in hasil_kumulatif.items():
+    print(f'{kata_kunci} : {kemunculan} kali')
