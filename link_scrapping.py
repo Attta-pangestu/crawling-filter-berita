@@ -7,6 +7,9 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 
+from bs4 import BeautifulSoup
+
+
 links = []
 
 def scrape_all_links(driver):
@@ -27,7 +30,7 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
     try:
         # Buka Bing
         driver.get(bing_url)
-        time.sleep(2)
+        time.sleep(4)
         # Temukan elemen input pencarian
         search_box = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.NAME, "q"))
@@ -38,6 +41,35 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
 
         # Tekan tombol Enter
         search_box.send_keys(Keys.ENTER)
+
+        time.sleep(3)
+
+
+        # Ubah Filter Date Range
+        # Cari dan klik elemen "Tools"
+        tools_element = WebDriverWait(driver,10).until(
+            EC.presence_of_element_located((By.ID, 'scope_tools_wrapper'))) 
+        tools_element.click()
+
+        # Cari dan klik elemen "Date"
+        date_element = WebDriverWait(driver,10).until(
+            EC.presence_of_element_located((By.ID, 'b_tween_searchTools'))) 
+        date_element.click()
+
+        # Masukkan tanggal mulai
+        start_date_input = WebDriverWait(driver,10).until(
+            EC.presence_of_element_located((By.ID, 'date_range_start')))
+        start_date_input.clear()
+        start_date_input.send_keys('01/01/2018')
+
+        # Masukkan tanggal akhir
+        end_date_input = driver.find_element(By.ID, 'date_range_end')
+        end_date_input.clear()
+        end_date_input.send_keys('01/01/2020')
+
+        # Klik tombol "Apply"
+        apply_button = driver.find_element(By.ID, 'time_filter_done_link')
+        apply_button.click()
 
         for page in range(num_pages):
             # Tunggu hingga hasil pencarian dimuat
@@ -53,11 +85,6 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
             for i, link in enumerate(links, start=1):
                 print(f"{i}. {link}")
 
-            # Cek apakah halaman ke-19
-            if page == 18:
-                print("Menunggu 7 detik sebelum melanjutkan ke halaman berikutnya...")
-                time.sleep(7)
-
             # Coba temukan elemen untuk halaman berikutnya dan klik
             try:
                 next_button = WebDriverWait(driver, 10).until(
@@ -68,9 +95,10 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
                 print(f"Tidak dapat menemukan elemen halaman berikutnya: {e}")
                 break  # Keluar dari loop jika tidak dapat menemukan elemen halaman berikutnya
 
+
     finally:
         # Tutup browser setelah selesai
         driver.quit()
 
 # Panggil fungsi pencarian dengan paginasi
-search_bing_with_pagination('pemilu', num_pages=20)
+search_bing_with_pagination('pemilu', num_pages=30)
