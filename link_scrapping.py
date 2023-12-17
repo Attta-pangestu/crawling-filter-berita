@@ -24,29 +24,32 @@ def scrape_all_links(driver):
 
 def get_link_info(result):
     # Cek apakah elemen tanggal publikasi ada
-    date_element_exists = result.find_elements(By.CLASS_NAME, 'news_dt')
-    if date_element_exists:
-        time.sleep(2)
-        # Ambil link
+    description_elements = result.find_elements(By.XPATH, './/p[@class="b_lineclamp4 b_algoSlug"]')
+    date_elements = result.find_elements(By.CLASS_NAME, 'news_dt')
+
+    if  date_elements:
+        # Ambil Link
         link_element = result.find_element(By.XPATH, './/h2/a')
-        link = link_element.get_attribute('href')
+        link_href = link_element.get_attribute('href')
 
         # Ambil judul
-        title_element = result.find_element(By.XPATH, './/h2/a')
-        title = title_element.text.strip()
+        title = link_element.text.strip()
 
+       # Ambil deskripsi
+       
+        # print(description_elements[0].get_attribute('outerHTML'))
+        description = description_elements[0].text.strip() if description_elements else "Deskripsi tidak ditemukan"
         # Ambil tanggal publikasi
-        date_element = result.find_element(By.CLASS_NAME, 'news_dt')
-        date = date_element.text.strip()
+        date = date_elements[0].text.strip()
 
         return {
-            "link": link,
             "judul": title,
-            "tanggal_publikasi": date
+            "tanggal_publikasi": date,
+            "link": link_href,
+            "deskripsi": description
         }
 
     return None
-
 
 
 def scrape_all_results_info(driver):
@@ -57,9 +60,10 @@ def scrape_all_results_info(driver):
     link_info = get_link_info(result)
     if link_info:
         # Cetak informasi
-        print(f"Link Berita: {link_info['link']}")
+        print(f"Link: {link_info['link']}")
         print(f"Judul: {link_info['judul']}")
         print(f"Tanggal Publikasi: {link_info['tanggal_publikasi']}")
+        print(f"Deskripsi : {link_info['deskripsi']}")
         print("")
         # Simpan informasi ke dalam struktur data yang sesuai
         links_metadata.append(link_info)
@@ -94,6 +98,7 @@ def set_filter_date_range(driver) :
     print('Berhasil mengatur filter date range')
 
 def search_bing_with_pagination(search_keyword, num_pages=10):
+  global links_metadata 
   # URL Bing
   bing_url = 'https://www.bing.com/'
   try:
@@ -112,11 +117,12 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
     # Tunggu hingga halaman pencarian dimuat
     time.sleep(3)
     print('Memuat halaman hasil pencarian')
+    # Mengatur filter date range
+    # set_filter_date_range(driver)
     for _page in range(num_pages):
       # Tunggu hingga hasil pencarian dimuat
       WebDriverWait(driver, 20).until(
           EC.presence_of_element_located((By.CSS_SELECTOR, 'li.b_algo h2 a')))
-
       # Panggil fungsi untuk scrape semua link
       scrape_all_results_info(driver)
 
@@ -149,7 +155,7 @@ def gsheet_upload(array_link):
     spreadsht = client.open("KUI_analysis_Scraping")
 
     # Buka worksheet berdasarkan nama/judulnya
-    worksht = spreadsht.worksheet("title", "Sheet1")
+    worksht = spreadsht.worksheet("title", "Bing Search")
 
     # Tambahkan data ke worksheet
     worksht.cell("A1").set_text_format("bold", True).value = "Item"
@@ -167,9 +173,10 @@ def gsheet_upload(array_link):
 
 try:
   # Panggil fungsi pencarian dengan paginasi
-  search_bing_with_pagination('kekeringan berita ', num_pages=2)
+  search_bing_with_pagination('kekeringan berita ', num_pages=3)
   # Update ke Google Sheets
   # gsheet_upload(links_metadata)
+  print(links_metadata)
 
 except Exception as main_error:
   # gsheet_upload(links_metadata)
