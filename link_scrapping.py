@@ -1,51 +1,67 @@
-import time
-
-import pygsheets
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-import requests
-from bs4 import BeautifulSoup
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+import time
+import pygsheets
+from math import ceil
 
-options = webdriver.ChromeOptions()
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
-driver = webdriver.Chrome(options=options)
 
-links = []
+
+links_metadata = []
+# Inisialisasi driver Chrome
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
 
 def scrape_all_links(driver):
   # Ambil URL dari hasil pencarian
   search_results = driver.find_elements(By.XPATH, '//li[@class="b_algo"]/h2/a')
   result_links = [result.get_attribute('href') for result in search_results]
-
-  # Menambahkan semua tautan ke dalam array links
-  links.extend(result_links)
+  return result_links
 
 
-def search_bing_with_pagination(search_keyword, num_pages=10):
-  # URL Bing
-  bing_url = 'https://www.bing.com/'
-  try:
-    print('membuka halaman bing')
-    # Buka Bing
-    driver.get(bing_url)
-    time.sleep(4)
-    # Temukan elemen input pencarian
-    search_box = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.NAME, "q")))
-    time.sleep(1)
-    # Masukkan kata kunci
-    search_box.send_keys(search_keyword)
-    time.sleep(1)
-    # Tekan tombol Enter
-    search_box.send_keys(Keys.ENTER)
-    # wait for page load
-    time.sleep(3)
-    print('memuat halaman hasil pencarian')
+def scrape_all_results_info(driver):
+  # Ambil elemen-elemen hasil pencarian
+  search_results = driver.find_elements(By.XPATH, '//li[@class="b_algo"]')
+
+  for result in search_results:
+    # Ambil link
+    # link_element = result.find_element(By.XPATH, './h2/a')
+    # link = link_element.get_attribute('href')
+
+    # Ambil judul
+    title_element = result.find_element(By.XPATH, '//h2/a')
+    title = title_element.text.strip()
+
+    # Ambil deskripsi singkat
+    # description_element = result.find_element(By.XPATH, '//div[@class="b_caption"]/p[@class="b_lineclamp2 b_algoSlug"]')
+    # description = description_element.text
+
+    # Ambil tanggal publikasi
+    date_element = result.find_element(By.CLASS_NAME, 'news_dt')
+    date = date_element.text.strip()
+
+    # Cetak informasi
+    # print(f"Link: {link}")
+    print(f"Judul: {title}")
+    # print(f"Deskripsi: {description}")
+    print(f"Tanggal Publikasi: {date}")
+    print("")
+
+    # Simpan informasi ke dalam struktur data yang sesuai
+    result_info = {
+        # "link": link,
+        "judul": title,
+        # "deskripsi": description,
+        "tanggal_publikasi": date
+    }
+    links_metadata.extend(result_info)
+
+
+def set_filter_date_range(driver) :
     time.sleep(4)
     tools_element = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.ID, 'scope_tools_wrapper')))
@@ -55,7 +71,7 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
     date_element = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.ID, 'b_tween_searchTools')))
     date_element.click()
-    print('memasukkan tanggal')
+    print('Memasukkan tanggal')
     # Masukkan tanggal mulai
     start_date_input = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.ID, 'date_range_start')))
@@ -69,25 +85,41 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
 
     # Klik tombol "Apply"
     apply_button = driver.find_element(By.ID, 'time_filter_done_link')
-
     time.sleep(3)
     apply_button.send_keys(Keys.ENTER)
-    print('berhasil menggatur filter date range')
+    print('Berhasil mengatur filter date range')
 
-    time.sleep(2)
+def search_bing_with_pagination(search_keyword, num_pages=10):
+  # URL Bing
+  bing_url = 'https://www.bing.com/'
+  try:
+    print('Membuka halaman Bing')
+    # Buka Bing
+    driver.get(bing_url)
+    time.sleep(4)
+    search_box = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.NAME, "q")))
+    time.sleep(1)
+    # Masukkan kata kunci
+    search_box.send_keys(search_keyword)
+    time.sleep(1)
+    # Tekan tombol Enter
+    search_box.send_keys(Keys.ENTER)
+    # Tunggu hingga halaman pencarian dimuat
+    time.sleep(3)
+    print('Memuat halaman hasil pencarian')
     for _page in range(num_pages):
       # Tunggu hingga hasil pencarian dimuat
       WebDriverWait(driver, 20).until(
           EC.presence_of_element_located((By.CSS_SELECTOR, 'li.b_algo h2 a')))
 
       # Panggil fungsi untuk scrape semua link
-      scrape_all_links(driver)
+      scrape_all_results_info(driver)
 
       # Cetak link untuk setiap halaman
-      print(f'Didapatkan sebanyak {len(links)} tautan')
-      # print(f"Hasil Pencarian untuk halaman {page + 1}:")
-      for i, link in enumerate(links, start=1):
-        print(f"{i}. {link}")
+      print(f'Didapatkan sebanyak {len(links_metadata)} tautan')
+      for i, link_info in enumerate(links_metadata, start=1):
+        print(f"{i}. {link_info['title']}")
 
       # Coba temukan elemen untuk halaman berikutnya dan klik
       try:
@@ -107,41 +139,39 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
 
 def gsheet_upload(array_link):
   try:
-    # Create the Client
+    # Buat objek klien
     client = pygsheets.authorize(
         service_account_file="kajian-ufuk-indonesia-b1e63d302e2e.json")
 
-    # opens a spreadsheet by its name/title
+    # Buka spreadsheet berdasarkan nama/judulnya
     spreadsht = client.open("KUI_analysis_Scraping")
 
-    # opens a worksheet by its name/title
+    # Buka worksheet berdasarkan nama/judulnya
     worksht = spreadsht.worksheet("title", "Sheet1")
 
-    # Now, let's add data to our worksheet
-
-    # Creating the first column
+    # Tambahkan data ke worksheet
     worksht.cell("A1").set_text_format("bold", True).value = "Item"
 
-    # if updating multiple values, the data
-    # should be in a matrix format
-    link_matrix = [[link] for link in array_link]
-    worksht.update_values("A2", link_matrix)  # Adding row values
+    # Jika mengupdate nilai untuk beberapa kolom, data
+    # harus berada dalam format matriks
+    link_matrix = [[link_info['link']] for link_info in array_link]
+    worksht.update_values("A2", link_matrix)
 
-    print("Links uploaded to Google Sheets successfully!")
+    print("Tautan berhasil diunggah ke Google Sheets!")
 
   except Exception as e:
-    print(f"Error uploading to Google Sheets: {e}")
+    print(f"Error mengunggah ke Google Sheets: {e}")
 
 
 try:
   # Panggil fungsi pencarian dengan paginasi
   search_bing_with_pagination('kekeringan berita ', num_pages=2)
-  # Update to Google Sheets
-  # gsheet_upload(links)
+  # Update ke Google Sheets
+  # gsheet_upload(links_metadata)
 
 except Exception as main_error:
-  # gsheet_upload(links)
-  print(f"Main program encountered an error: {main_error}")
+  # gsheet_upload(links_metadata)
+  print(f"Program utama menemui kesalahan: {main_error}")
 finally:
   # Tutup browser setelah selesai
   driver.quit()
