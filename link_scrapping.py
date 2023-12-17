@@ -8,6 +8,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import pygsheets
 from math import ceil
+import pandas as pd
 
 
 
@@ -43,10 +44,10 @@ def get_link_info(result):
         date = date_elements[0].text.strip()
 
         return {
-            "judul": title,
-            "tanggal_publikasi": date,
             "link": link_href,
-            "deskripsi": description
+            "judul": title,
+            "deskripsi": description,
+            "tanggal_publikasi": date
         }
 
     return None
@@ -66,7 +67,7 @@ def scrape_all_results_info(driver):
         print(f"Deskripsi : {link_info['deskripsi']}")
         print("")
         # Simpan informasi ke dalam struktur data yang sesuai
-        links_metadata.append(link_info)
+        links_metadata.append([link_info['link'], link_info['judul'], link_info['deskripsi'], link_info['tanggal_publikasi']])
 
 
 def set_filter_date_range(driver) :
@@ -118,7 +119,7 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
     time.sleep(3)
     print('Memuat halaman hasil pencarian')
     # Mengatur filter date range
-    # set_filter_date_range(driver)
+    set_filter_date_range(driver)
     for _page in range(num_pages):
       # Tunggu hingga hasil pencarian dimuat
       WebDriverWait(driver, 20).until(
@@ -146,40 +147,38 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
 
 
 def gsheet_upload(array_link):
-  try:
-    # Buat objek klien
-    client = pygsheets.authorize(
-        service_account_file="kajian-ufuk-indonesia-b1e63d302e2e.json")
+    try:
+        # Buat DataFrame dari array_link
+        df = pd.DataFrame(array_link)
 
-    # Buka spreadsheet berdasarkan nama/judulnya
-    spreadsht = client.open("KUI_analysis_Scraping")
+        # Buat objek klien
+        client = pygsheets.authorize(
+            service_account_file="kajian-ufuk-indonesia-b1e63d302e2e.json")
 
-    # Buka worksheet berdasarkan nama/judulnya
-    worksht = spreadsht.worksheet("title", "Bing Search")
+        # Buka spreadsheet berdasarkan nama/judulnya
+        spreadsht = client.open("KUI_analysis_Scraping")
 
-    # Tambahkan data ke worksheet
-    worksht.cell("A1").set_text_format("bold", True).value = "Item"
+        # Buka worksheet berdasarkan nama/judulnya
+        worksht = spreadsht.worksheet("title", "Sheet3")
 
-    # Jika mengupdate nilai untuk beberapa kolom, data
-    # harus berada dalam format matriks
-    link_matrix = [[link_info['link']] for link_info in array_link]
-    worksht.update_values("A2", link_matrix)
+        # Mengunggah DataFrame ke Google Sheets
+        worksht.set_dataframe(df, start='A2')
+        worksht.delete_rows(2)
 
-    print("Tautan berhasil diunggah ke Google Sheets!")
+        print("Data berhasil diunggah ke Google Sheets!")
 
-  except Exception as e:
-    print(f"Error mengunggah ke Google Sheets: {e}")
-
+    except Exception as e:
+        print(f"Error mengunggah ke Google Sheets: {e}")
 
 try:
   # Panggil fungsi pencarian dengan paginasi
   search_bing_with_pagination('kekeringan berita ', num_pages=3)
   # Update ke Google Sheets
-  # gsheet_upload(links_metadata)
+  gsheet_upload(links_metadata)
   print(links_metadata)
 
 except Exception as main_error:
-  # gsheet_upload(links_metadata)
+  gsheet_upload(links_metadata)
   print(f"Program utama menemui kesalahan: {main_error}")
 finally:
   # Tutup browser setelah selesai
