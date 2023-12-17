@@ -22,43 +22,47 @@ def scrape_all_links(driver):
   result_links = [result.get_attribute('href') for result in search_results]
   return result_links
 
+def get_link_info(result):
+    # Cek apakah elemen tanggal publikasi ada
+    date_element_exists = result.find_elements(By.CLASS_NAME, 'news_dt')
+    if date_element_exists:
+        time.sleep(2)
+        # Ambil link
+        link_element = result.find_element(By.XPATH, './/h2/a')
+        link = link_element.get_attribute('href')
+
+        # Ambil judul
+        title_element = result.find_element(By.XPATH, './/h2/a')
+        title = title_element.text.strip()
+
+        # Ambil tanggal publikasi
+        date_element = result.find_element(By.CLASS_NAME, 'news_dt')
+        date = date_element.text.strip()
+
+        return {
+            "link": link,
+            "judul": title,
+            "tanggal_publikasi": date
+        }
+
+    return None
+
+
 
 def scrape_all_results_info(driver):
   # Ambil elemen-elemen hasil pencarian
   search_results = driver.find_elements(By.XPATH, '//li[@class="b_algo"]')
 
   for result in search_results:
-    # Ambil link
-    # link_element = result.find_element(By.XPATH, './h2/a')
-    # link = link_element.get_attribute('href')
-
-    # Ambil judul
-    title_element = result.find_element(By.XPATH, '//h2/a')
-    title = title_element.text.strip()
-
-    # Ambil deskripsi singkat
-    # description_element = result.find_element(By.XPATH, '//div[@class="b_caption"]/p[@class="b_lineclamp2 b_algoSlug"]')
-    # description = description_element.text
-
-    # Ambil tanggal publikasi
-    date_element = result.find_element(By.CLASS_NAME, 'news_dt')
-    date = date_element.text.strip()
-
-    # Cetak informasi
-    # print(f"Link: {link}")
-    print(f"Judul: {title}")
-    # print(f"Deskripsi: {description}")
-    print(f"Tanggal Publikasi: {date}")
-    print("")
-
-    # Simpan informasi ke dalam struktur data yang sesuai
-    result_info = {
-        # "link": link,
-        "judul": title,
-        # "deskripsi": description,
-        "tanggal_publikasi": date
-    }
-    links_metadata.extend(result_info)
+    link_info = get_link_info(result)
+    if link_info:
+        # Cetak informasi
+        print(f"Link Berita: {link_info['link']}")
+        print(f"Judul: {link_info['judul']}")
+        print(f"Tanggal Publikasi: {link_info['tanggal_publikasi']}")
+        print("")
+        # Simpan informasi ke dalam struktur data yang sesuai
+        links_metadata.append(link_info)
 
 
 def set_filter_date_range(driver) :
@@ -118,8 +122,6 @@ def search_bing_with_pagination(search_keyword, num_pages=10):
 
       # Cetak link untuk setiap halaman
       print(f'Didapatkan sebanyak {len(links_metadata)} tautan')
-      for i, link_info in enumerate(links_metadata, start=1):
-        print(f"{i}. {link_info['title']}")
 
       # Coba temukan elemen untuk halaman berikutnya dan klik
       try:
