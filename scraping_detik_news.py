@@ -9,6 +9,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from gsheet_helper import gsheet_upload
 import re
 from datetime import datetime, timedelta
+from date_convert_format import convert_date_format
+from html_analisis.keyword_counter_filter import keyword_counter_filter
 
 options = Options()
 options.page_load_strategy = 'eager'
@@ -19,13 +21,8 @@ driver = webdriver.Chrome(options=options)
 
 links_metadata = []
 date_start = "01/01/2018"
-date_step_month = 3
-date_end = "01/01/2019"
-keyword = "kekeringan"
-
-# Ubah format string ke objek datetime
-start_date = datetime.strptime(date_start, "%d/%m/%Y")
-end_date = datetime.strptime(date_end, "%d/%m/%Y")
+date_end = "01/01/2023"
+keyword = "kemarau"
 
 links_metadata = []
 
@@ -36,28 +33,38 @@ def get_link_info(result):
       By.XPATH, './/p[@class="b_lineclamp4 b_algoSlug"]')
   date_elements = result.find_elements(By.CLASS_NAME, 'date')
 
-  if date_elements:
-    # Ambil Link
-    link_element = result.find_element(By.XPATH, './/a')
-    link_href = link_element.get_attribute('href')
+  try:
+    if date_elements:
+      # Ambil Link
+      link_element = result.find_element(By.XPATH, './/a')
+      link_href = link_element.get_attribute('href')
+      # Hitung jumlah keywordnya
+      keyword_count = keyword_counter_filter(link_href, keyword)
+      if keyword_count > 1:
+        # Ambil judul
+        title = result.find_element(By.CLASS_NAME, 'title').text.strip()
 
-    # Ambil judul
-    title = result.find_element(By.CLASS_NAME, 'title').text.strip()
+        # Ambil deskripsi
+        description = result.find_element(By.XPATH, './/p').text.strip()
 
-    # Ambil deskripsi
-    description = result.find_element(By.XPATH, './/p').text.strip()
+        # Ambil tanggal publikasi
+        raw_date = date_elements[0].text.strip()
+        match = re.search(r'\w+, (\d+ \w+ \d+ \d+:\d+) WIB', raw_date)
+        date = match.group(1) if match else "Format tanggal tidak sesuai"
+        date = convert_date_format(date)
 
-    # Ambil tanggal publikasi
-    raw_date = date_elements[0].text.strip()
-    match = re.search(r'\w+, (\d+ \w+ \d+ \d+:\d+) WIB', raw_date)
-    date = match.group(1) if match else "Format tanggal tidak sesuai"
+        return {
+            "link": link_href,
+            "keyword": keyword,
+            "judul": title,
+            "deskripsi": description,
+            "tanggal_publikasi": date,
+            "keyword_count": keyword_count
+        }
 
-    return {
-        "link": link_href,
-        "judul": title,
-        "deskripsi": description,
-        "tanggal_publikasi": date
-    }
+  except Exception as e:
+    print(f"Error dalam mengambil informasi link: {e}")
+    return None
 
   return None
 
@@ -72,68 +79,57 @@ def scrape_all_results_info(driver):
     if link_info:
       # Cetak informasi
       print(f"Link: {link_info['link']}")
+      print(f"Jumlah kemunculan keyword: {link_info['keyword_count']}")
       print(f"Judul: {link_info['judul']}")
       print(f"Tanggal Publikasi: {link_info['tanggal_publikasi']}")
       print(f"Deskripsi: {link_info['deskripsi']}")
       print("")
       # Simpan informasi ke dalam struktur data yang sesuai
       links_metadata.append([
-          link_info['link'], link_info['judul'], link_info['deskripsi'],
-          link_info['tanggal_publikasi']
+          link_info['link'],
+          link_info['keyword'],
+          link_info['judul'],
+          link_info['deskripsi'],
+          link_info['tanggal_publikasi'],
+          link_info['keyword_count'],
       ])
 
 
-def search_with_pagination(search_keyword,
-                           start_date,
-                           end_date,
-                           date_step_month,
-                           num_pages=10):
+def search_with_pagination(search_keyword, start_date, end_date, num_pages=10):
   global links_metadata
   try:
+    detik_link = f"https://www.detik.com/search/searchall?query={search_keyword}&sortby=time&fromdatex={start_date}&todatex={end_date}&siteid=3"
+    driver.get(detik_link)
+    print(detik_link)
 
-    while start_date <= end_date:
-      current_date = start_date + timedelta(days=date_step_month * 30)
+    # Menjalankan skrip JavaScript setelah halaman selesai dimuat
+    # Sisipkan skrip JavaScript untuk menghentikan loading
+    script_stop = "window.stop();"
+    driver.execute_script(script_stop)
+    scrape_all_results_info(driver)
 
-      current_date_str = current_date.strftime("%d/%m/%Y")
-      date_start_str = start_date.strftime("%d/%m/%Y")
-      
-      detik_link = f"https://www.detik.com/search/searchall?query={keyword}&sortby=time&fromdatex={date_start_str}&todatex={current_date_str}&siteid=3"
-
-      driver.get(detik_link)
-      print(
-          f'Sedang memuat halaman berita untuk tanggal: {current_date.strftime("%d/%m/%Y")}'
-      )
-      print(detik_link)
-
-      # Menjalankan skrip JavaScript setelah halaman selesai dimuat
-      # Sisipkan skrip JavaScript untuk menghentikan loading
-      script_stop = "window.stop();"
-      driver.execute_script(script_stop)
+    for _page in range(num_pages):
+      # Tunggu hingga hasil pencarian dimuat
+      print(f"Sedang mencari next button halaman {_page}")
+      WebDriverWait(driver, 20).until(
+          EC.presence_of_element_located((By.CSS_SELECTOR, 'article')))
+      # Panggil fungsi untuk scrape semua link
       scrape_all_results_info(driver)
+      # Cetak link untuk setiap halaman
+      print(f'Didapatkan sebanyak {len(links_metadata)} tautan')
 
-      for _page in range(num_pages):
-        # Tunggu hingga hasil pencarian dimuat
-        print('Sedang mencari next button')
-        WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'article')))
-        # Panggil fungsi untuk scrape semua link
-        scrape_all_results_info(driver)
-        # Cetak link untuk setiap halaman
-        print(f'Didapatkan sebanyak {len(links_metadata)} tautan')
+      # Coba temukan elemen untuk halaman berikutnya dan klik
+      try:
+        next_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable(
+                (By.CSS_SELECTOR, '.paging a.last img[alt="Kanan"]')))
 
-        # Coba temukan elemen untuk halaman berikutnya dan klik
-        try:
-          next_button = WebDriverWait(driver, 10).until(
-              EC.element_to_be_clickable((By.CSS_SELECTOR, '.paging a.last')))
-          driver.execute_script("arguments[0].scrollIntoView();", next_button)
-          next_button.click()
+        driver.execute_script("arguments[0].scrollIntoView();", next_button)
+        next_button.click()
 
-        except Exception as e:
-          print(f"Tidak dapat menemukan elemen halaman berikutnya: {e}")
-          break  # Keluar dari loop jika tidak dapat menemukan elemen halaman berikutnya
-
-      # Update start_date untuk iterasi selanjutnya
-      start_date = current_date
+      except Exception as e:
+        print(f"Tidak dapat menemukan elemen halaman berikutnya: {e}")
+        break  # Keluar dari loop jika tidak dapat menemukan elemen halaman berikutnya
 
   finally:
     # Tutup browser setelah selesai
@@ -142,11 +138,7 @@ def search_with_pagination(search_keyword,
 
 try:
   # Panggil fungsi pencarian dengan paginasi
-  search_with_pagination('kekeringan',
-                         start_date,
-                         end_date,
-                         date_step_month,
-                         num_pages=200)
+  search_with_pagination(keyword, date_start, date_end, num_pages=200)
   # Update ke Google Sheets
   gsheet_upload(array_link=links_metadata, Sheet='Detik', update=True)
 
