@@ -3,6 +3,8 @@ date_end = "01/01/2023"
 keyword = "kemarau"
 
 detik_pattern = {
+    'search_results' : '//article[not(contains(@class, "video_tag"))]',
+    'next_elements' : '.paging a.last img[alt="Kanan"]',
     'description_elements' : './/p[@class="b_lineclamp4 b_algoSlug"]',
     'date_elements' : "news_dt",
     'link_elements' : ".//h2/a",
@@ -25,7 +27,7 @@ def generate_array_search():
             'link': search_link,
             'pattern': search_prop['pattern']
         }
-    return search_interface
+    return [search_interface,keyword]
 
 
 
