@@ -7,9 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
-
-
-# Fungsi untuk menginisialisasi driver
+# Function to initialize the driver
 def init_driver():
     chrome_options = Options()
     chrome_options.page_load_strategy = 'eager'
@@ -17,74 +15,69 @@ def init_driver():
     return driver
 
 
-def is_valid_domain(link, main_domain):
-    parsed_url = urlparse(link)
-    # Dapatkan domain dari link
-    link_domain = parsed_url.netloc
-    
-    # Pisahkan domain menjadi bagian subdomain dan domain utama
-    subdomains = link_domain.split('.')
-    
-    # Jika domain utama sama dengan yang diinginkan
-    if subdomains[-2:] == main_domain.split('.')[-2:]:
+def is_valid_domain(url, domain):
+    parsed_url = urlparse(url)
+    # Dapatkan domain dari URL
+    url_domain = parsed_url.netloc
+
+    # Jika domain utama sama dengan yang diinginkan atau merupakan subdomain dari domain yang diinginkan
+    if url_domain == domain or url_domain.endswith("." + domain):
         return True
-    
+
     return False
 
-def convert_date_filter_bing(date_string):
-  reference_date = datetime(1970, 1, 11)
-  target_date = datetime.strptime(date_string, '%d/%m/%Y')
-  days_difference = (target_date - reference_date).days
-  return days_difference
 
+def convert_date_filter_bing(date_string):
+    reference_date = datetime(1970, 1, 11)
+    target_date = datetime.strptime(date_string, '%d/%m/%Y')
+    days_difference = (target_date - reference_date).days
+    return days_difference
 
 from datetime import datetime, timedelta
 
+# Function to get the first three words from the date
+def get_first_three_words(input_date):
+    words = input_date.split()
+    first_three_words = words[:3]
 
-# Fungsi untuk mengambil tiga kata pertama dari tanggal
-def ambil_tiga_kata_pertama(input_tanggal):
-    kata_kata = input_tanggal.split()
-    tiga_kata_pertama = kata_kata[:3]
+    if first_three_words[0].isdigit():
+        first_three_words[1] = first_three_words[1][:3]
 
-    if tiga_kata_pertama[0].isdigit():
-        tiga_kata_pertama[1] = tiga_kata_pertama[1][:3]
+    return ' '.join(first_three_words)
 
-    return ' '.join(tiga_kata_pertama)
-
-bulan_mapping = {
+month_mapping = {
     'Jan': 'Jan',
     'Feb': 'Feb',
     'Mar': 'Mar',
     'Apr': 'Apr',
-    'Mei': 'May',  # Ganti 'Mei' ke 'May'
+    'Mei': 'May',
     'Jun': 'Jun',
     'Jul': 'Jul',
-    'Agu': 'Aug',  # Ganti 'Agu' ke 'Aug'
+    'Agu': 'Aug',
     'Sep': 'Sep',
     'Okt': 'Oct',
     'Nov': 'Nov',
     'Des': 'Dec'
 }
 
-# Fungsi untuk mengonversi format tanggal
+# Function to convert date format
 def convert_date_format(input_date):
     try:
-        format_tanggal = "%b %d, %Y %H:%M" if ':' in input_date else "%b %d, %Y"
+        date_format = "%b %d, %Y %H:%M" if ':' in input_date else "%b %d, %Y"
 
-        for id, en in bulan_mapping.items():
+        for id, en in month_mapping.items():
             input_date = input_date.replace(id, en)
 
-        date_object = datetime.strptime(input_date, format_tanggal)
-        output_date = date_object.strftime("%m/%d/%Y")  # Mengganti format keluaran ke "MM/DD/YYYY"
+        date_object = datetime.strptime(input_date, date_format)
+        output_date = date_object.strftime("%m/%d/%Y")
 
         return output_date
 
     except ValueError as ve:
-        print(f"Error dalam mengonversi format tanggal: {ve}")
+        print(f"Error converting date format: {ve}")
         return None
 
-
-# Fungsi untuk menghitung kemunculan keyword
+# Function to count keyword occurrences
 def keyword_counter_filter(link, keyword):
     try:
         response = requests.get(link)
@@ -95,5 +88,5 @@ def keyword_counter_filter(link, keyword):
         return keyword_count
 
     except Exception as e:
-        print(f"Error dalam mengambil atau menghitung keyword di link {link}: {e}")
+        print(f"Error fetching or counting keyword in link {link}: {e}")
         return 0

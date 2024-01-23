@@ -16,6 +16,9 @@ try:
         element_pattern = data['pattern']
         domain = data['domain'] 
 
+        print("============================================")
+        print("MEMULAI SCRAPING DARI MEDIA ", source)
+        print("============================================\n")
         
         # Panggil fungsi pencarian dengan paginasi
         links_metadata = search_with_pagination(keyword,link, element_pattern, domain,  num_pages=2)

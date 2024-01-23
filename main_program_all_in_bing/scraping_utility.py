@@ -10,10 +10,7 @@ def  scrape_link_info(keyword, result, element_pattern, domain):
         date_elements = result.find_elements(By.CSS_SELECTOR, element_pattern['date_elements'])
         link_element = result.find_element(By.CSS_SELECTOR, element_pattern['link_elements'])
         link_href = link_element.get_attribute('href')
-        if date_elements :
-            print({domain, link_href})
-            if( is_valid_domain(link= link_href, main_domain=domain)) :
-                print("Termasuk domain utama")
+        if date_elements and is_valid_domain(link_href, domain) :
             # Ambil Link
             # Hitung jumlah keywordnya
             # keyword_count = keyword_counter_filter(link_href, keyword)
