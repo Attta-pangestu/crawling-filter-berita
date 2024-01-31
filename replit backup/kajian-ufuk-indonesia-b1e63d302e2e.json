@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "kajian-ufuk-indonesia",
+  "private_key_id": "b1e63d302e2e389aa46758e52862c925ad51ee36",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDL05I8DirS27si\nEGAIcV+Nhysmaol9RuZz+/I2HYkVUbicN5sutUqrw9vzx8caBj0MrL3Ai9szQ568\noSS+fB9Ob4+AlCMUhL2tUwuHQvk2FEEqFQZW8aazrfv2nRJfR85P0/YQaZVyhLkh\noYKnNW+RYqcMI0b+xfFU3tmFtbKP+FltVsy/OZN0H4r0mrjE42nTKXtH/uEMkzo7\nrBLPkDvLkB0hm+qAp7WbVDnELHaULfdiZ4u1jCFlzJcpIl/Gg0P6CIAAvR2Jir6J\nuVp1HkpEsGAdU7CP14hWRbEGKWy8D734LThRFnp7LSBwuLFilCpdwtUjzGxizOkw\nKmtpF6VBAgMBAAECggEADjgO1SdwW5gWToapqmEdVzpRG2uWdpG4ASqX76hBEEaM\njEJRTjF5uXCPAytCQ5mgj+YrkRd4ldOPau2LaonuZaqA7ml3JobplAItdVTJ3ZjN\nYHYJxI40UMfQAljcB59S4E0DNwskkLH7V8Ikgw1mYHQrPtylpt+Qabknn80ofSRI\nWs07fvZzz7cnRnLxTZE3dAa8bGtRSMR8Qfno4MX01FG233mLQIUGdKX0wjrvSygK\nYg8t/WtpwWjCF2IsSUQHrWMavQYV4MxdUR15GQH94oN+1YWL9B2XgarzYjNp8owl\nriMcTwm9QgN33tcLttOlKKJ15sunQZrDhf4th9BwyQKBgQDlBaOE9JGZjGUMHENh\nYSxoQnkgz+LgF0ltKweROyLTzkX1+S9sIG453eUZpGvNPLxUhukpb9TGVdsEDrQr\nhfPhQ0w8KesEWVRij1OOsqRftbykMk4Sfbn4Bix+2zpsToc0npyIriKLh/IqtUQG\ns3Q82Nmr4NXYKpGC5LCKt6yXGQKBgQDj1iM9JEkJPsuC5+xn27zwvT4wuwX6wIMo\ntY7hI2I4+TwPQGwPnXlaf1yxylYKIUkUdSyWTLiSHzHD7CvTvCvbx1Q6JRjPnGwU\nYFHHrFNMzrj58CNb4+Ad7CohpdiPgMh9kzkn2TV48QUV7QP9G7Emg1C1AKmgJy46\nCavWZ4yMaQKBgHUZRfuEJTISc9QWW2leCxuf6VkakhEsNvHnj231g6AyltjmuRWb\nG2DhEPPkeu4sgMrjVDJIqM1kNqDDd+HNEt55z2/vqufFWP0v9XQ/6QW64aI+ymZv\n/HdRiMywARZBrKX992F3T9hyASNPHWIjvWojImDci9qEIXSAw7eZpFh5AoGBAOKz\nHdkmk62pV+JnVql40aVRB+KBFVAN4fPNw99sz70U8ZfTaDKZZDiR5e/Z/oaR3B+I\n/9aFfFmYxHHIO0uxPoqu6bX5V5iscjZMKNNfOnuAbjnzoZs7QLNFXB6i4LrZT6Tz\nqrllvXkbiQ3qCj/9H+XMX6/aeu2qTqrdGKh73DORAoGBANVihLr8M4lDrV+yKsjr\nyS/WOMbJ3+x2omJW88hdL3bVTV70/jYtu6PqY+sO1VNnLnLc9xLAwOg8Z1jtuBu8\ntrj/GjV6PLxxlWyfYLD5zqsTwbWkDLX2noxMdASusPnV0zBB/7UJrZuYadpxiGuC\nVKS+y+AYGlLnH694WJRhBBSw\n-----END PRIVATE KEY-----\n",
+  "client_email": "web-scraping@kajian-ufuk-indonesia.iam.gserviceaccount.com",
+  "client_id": "103068352203663224656",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/web-scraping%40kajian-ufuk-indonesia.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
